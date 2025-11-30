@@ -1,4 +1,4 @@
--- Nebula UI - Revolutionary Edition
+-- Nebula UI - Ultimate Edition (Fixed Drag & Horizontal Layout)
 local Nebula = {}
 
 -- Services
@@ -7,7 +7,6 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
-local HttpService = game:GetService("HttpService")
 
 -- Main UI
 local ScreenGui = Instance.new("ScreenGui")
@@ -15,7 +14,7 @@ ScreenGui.Name = "NebulaUI"
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
--- ユーティリティ関数
+-- Utility Functions
 local function Create(className, properties)
     local obj = Instance.new(className)
     for prop, value in pairs(properties) do
@@ -24,75 +23,131 @@ local function Create(className, properties)
     return obj
 end
 
+-- 完全修正されたドラッグシステム
+local DragManager = {
+    ActiveWindows = {}
+}
+
+function DragManager:EnableDrag(frame, dragHandle)
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale, 
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale, 
+            startPos.Y.Offset + delta.Y
+        )
+    end
+    
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
 -- 革新的な機能モジュール
 local InnovativeFeatures = {
-    -- スマートサーチ機能
-    SmartSearch = function(container, items)
-        local searchFrame = Create("Frame", {
-            BackgroundColor3 = Color3.fromRGB(30, 30, 35),
-            Size = UDim2.new(1, 0, 0, 40),
-            Parent = container
-        })
-        
-        local searchBox = Create("TextBox", {
-            PlaceholderText = "🔍 スマート検索...",
-            ClearTextOnFocus = false,
-            BackgroundColor3 = Color3.fromRGB(40, 40, 45),
-            Size = UDim2.new(1, -20, 0, 30),
-            Position = UDim2.new(0, 10, 0, 5),
-            TextColor3 = Color3.fromRGB(240, 240, 240),
-            TextSize = 14,
-            Font = Enum.Font.Gotham,
-            Parent = searchFrame
-        })
-        
-        Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = searchBox})
-        
-        searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-            local searchText = searchBox.Text:lower()
-            for _, item in pairs(items) do
-                local visible = item.Name:lower():find(searchText) ~= nil
-                item.Visible = visible
-            end
-        end)
-        
-        return searchFrame
-    end,
-    
-    -- リアルタイムパフォーマンスモニター
+    -- リアルタイムパフォーマンスモニター（コンパクト版）
     PerformanceMonitor = function(container)
         local monitorFrame = Create("Frame", {
             BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-            Size = UDim2.new(1, 0, 0, 80),
+            Size = UDim2.new(1, 0, 0, 60),
             Parent = container
         })
         
         Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = monitorFrame})
         
+        local statsGrid = Create("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -20, 1, -10),
+            Position = UDim2.new(0, 10, 0, 5),
+            Parent = monitorFrame
+        })
+        
+        -- FPS表示
+        local fpsFrame = Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+            Size = UDim2.new(0.3, -5, 1, 0),
+            Parent = statsGrid
+        })
+        
+        Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = fpsFrame})
+        
         local fpsLabel = Create("TextLabel", {
             Text = "FPS: --",
             TextColor3 = Color3.fromRGB(240, 240, 240),
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -20, 0.5, 0),
-            Position = UDim2.new(0, 10, 0, 5),
-            Font = Enum.Font.Gotham,
+            Size = UDim2.new(1, 0, 1, 0),
+            Font = Enum.Font.GothamSemibold,
             TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = monitorFrame
+            Parent = fpsFrame
         })
         
-        local pingLabel = Create("TextLabel", {
-            Text = "Ping: -- ms",
+        -- メモリ表示
+        local memoryFrame = Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+            Size = UDim2.new(0.3, -5, 1, 0),
+            Position = UDim2.new(0.35, 0, 0, 0),
+            Parent = statsGrid
+        })
+        
+        Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = memoryFrame})
+        
+        local memoryLabel = Create("TextLabel", {
+            Text = "MEM: --",
             TextColor3 = Color3.fromRGB(240, 240, 240),
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -20, 0.5, 0),
-            Position = UDim2.new(0, 10, 0.5, 0),
-            Font = Enum.Font.Gotham,
+            Size = UDim2.new(1, 0, 1, 0),
+            Font = Enum.Font.GothamSemibold,
             TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = monitorFrame
+            Parent = memoryFrame
         })
         
+        -- ピング表示
+        local pingFrame = Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(40, 40, 45),
+            Size = UDim2.new(0.3, -5, 1, 0),
+            Position = UDim2.new(0.7, 0, 0, 0),
+            Parent = statsGrid
+        })
+        
+        Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = pingFrame})
+        
+        local pingLabel = Create("TextLabel", {
+            Text = "PING: --",
+            TextColor3 = Color3.fromRGB(240, 240, 240),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 12,
+            Parent = pingFrame
+        })
+        
+        -- パフォーマンス監視
         local lastTime = tick()
         local frameCount = 0
         
@@ -105,11 +160,11 @@ local InnovativeFeatures = {
                 
                 -- 色をパフォーマンスに基づいて変更
                 if fps >= 60 then
-                    fpsLabel.TextColor3 = Color3.fromRGB(85, 255, 85)
+                    fpsFrame.BackgroundColor3 = Color3.fromRGB(40, 180, 40)
                 elseif fps >= 30 then
-                    fpsLabel.TextColor3 = Color3.fromRGB(255, 255, 85)
+                    fpsFrame.BackgroundColor3 = Color3.fromRGB(180, 180, 40)
                 else
-                    fpsLabel.TextColor3 = Color3.fromRGB(255, 85, 85)
+                    fpsFrame.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
                 end
                 
                 frameCount = 0
@@ -120,8 +175,8 @@ local InnovativeFeatures = {
         return monitorFrame
     end,
     
-    -- カスタマイズ可能なホットキーシステム
-    HotkeySystem = function(container, hotkeys)
+    -- コンパクトなホットキーシステム
+    CompactHotkeySystem = function(container, hotkeys)
         local hotkeyFrame = Create("Frame", {
             BackgroundColor3 = Color3.fromRGB(30, 30, 35),
             Size = UDim2.new(1, 0, 0, 0),
@@ -132,7 +187,7 @@ local InnovativeFeatures = {
         Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = hotkeyFrame})
         
         local layout = Create("UIListLayout", {
-            Padding = UDim.new(0, 5),
+            Padding = UDim.new(0, 8),
             Parent = hotkeyFrame
         })
         
@@ -147,7 +202,7 @@ local InnovativeFeatures = {
         for name, hotkeyConfig in pairs(hotkeys) do
             local hotkeyRow = Create("Frame", {
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 30),
+                Size = UDim2.new(1, 0, 0, 25),
                 Parent = hotkeyFrame
             })
             
@@ -157,7 +212,7 @@ local InnovativeFeatures = {
                 BackgroundTransparency = 1,
                 Size = UDim2.new(0.6, 0, 1, 0),
                 Font = Enum.Font.Gotham,
-                TextSize = 12,
+                TextSize = 11,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Parent = hotkeyRow
             })
@@ -165,10 +220,10 @@ local InnovativeFeatures = {
             local keyButton = Create("TextButton", {
                 Text = hotkeyConfig.key,
                 BackgroundColor3 = Color3.fromRGB(50, 50, 55),
-                Size = UDim2.new(0.3, 0, 0.7, 0),
-                Position = UDim2.new(0.65, 0, 0.15, 0),
+                Size = UDim2.new(0.3, 0, 0.8, 0),
+                Position = UDim2.new(0.65, 0, 0.1, 0),
                 TextColor3 = Color3.fromRGB(200, 200, 200),
-                TextSize = 11,
+                TextSize = 10,
                 Font = Enum.Font.Gotham,
                 Parent = hotkeyRow
             })
@@ -205,120 +260,146 @@ local InnovativeFeatures = {
         return hotkeyFrame
     end,
     
-    -- 3Dプレビュー機能
-    Create3DPreview = function(container, modelName)
-        local previewFrame = Create("Frame", {
-            BackgroundColor3 = Color3.fromRGB(20, 20, 25),
-            Size = UDim2.new(1, 0, 0, 200),
-            ClipsDescendants = true,
-            Parent = container
-        })
-        
-        Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = previewFrame})
-        
-        local viewport = Create("ViewportFrame", {
+    -- クイックアクションボタングリッド
+    QuickActionGrid = function(container, actions)
+        local gridFrame = Create("Frame", {
             BackgroundColor3 = Color3.fromRGB(30, 30, 35),
-            Size = UDim2.new(1, -20, 1, -40),
-            Position = UDim2.new(0, 10, 0, 30),
-            Parent = previewFrame
-        })
-        
-        local camera = Create("Camera", {
-            Parent = viewport,
-            FieldOfView = 70
-        })
-        
-        viewport.CurrentCamera = camera
-        
-        -- サンプルモデルを作成
-        local part = Create("Part", {
-            Name = "PreviewPart",
-            Size = Vector3.new(4, 4, 4),
-            Position = Vector3.new(0, 0, 0),
-            Anchored = true,
-            Parent = viewport,
-            Material = Enum.Material.Neon,
-            BrickColor = BrickColor.new("Bright blue")
-        })
-        
-        camera.CFrame = CFrame.new(0, 0, 10)
-        
-        Create("TextLabel", {
-            Text = "3D Preview: " .. modelName,
-            TextColor3 = Color3.fromRGB(240, 240, 240),
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 25),
-            Position = UDim2.new(0, 10, 0, 5),
-            Font = Enum.Font.Gotham,
-            TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = previewFrame
-        })
-        
-        -- 自動回転
-        local rotation = 0
-        RunService.Heartbeat:Connect(function(delta)
-            rotation = rotation + delta * 0.5
-            part.CFrame = CFrame.Angles(0, rotation, 0)
-        end)
-        
-        return previewFrame
-    end,
-    
-    -- データ視覚化チャート
-    CreateChart = function(container, data, chartType)
-        local chartFrame = Create("Frame", {
-            BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-            Size = UDim2.new(1, 0, 0, 150),
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
             Parent = container
         })
         
-        Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = chartFrame})
+        Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = gridFrame})
         
-        local maxValue = math.max(unpack(data.values))
+        local gridLayout = Create("UIGridLayout", {
+            CellSize = UDim2.new(0.48, 0, 0, 40),
+            CellPadding = UDim2.new(0.04, 0, 0, 8),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Parent = gridFrame
+        })
         
-        if chartType == "bar" then
-            for i, value in ipairs(data.values) do
-                local bar = Create("Frame", {
-                    BackgroundColor3 = data.colors[i] or Color3.fromRGB(0, 170, 255),
-                    Size = UDim2.new(0.8 / #data.values, 0, value / maxValue, -10),
-                    Position = UDim2.new(0.1 + (i-1) * (0.8 / #data.values), 0, 1 - (value / maxValue), 5),
-                    AnchorPoint = Vector2.new(0, 1),
-                    Parent = chartFrame
-                })
-                
-                Create("UICorner", {
-                    CornerRadius = UDim.new(0, 4),
-                    Parent = bar
-                })
-                
+        Create("UIPadding", {
+            PaddingTop = UDim.new(0, 10),
+            PaddingBottom = UDim.new(0, 10),
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
+            Parent = gridFrame
+        })
+        
+        for name, actionConfig in pairs(actions) do
+            local actionButton = Create("TextButton", {
+                BackgroundColor3 = Color3.fromRGB(50, 50, 55),
+                BackgroundTransparency = 0.5,
+                Size = UDim2.new(1, 0, 0, 40),
+                Text = "",
+                Parent = gridFrame
+            })
+            
+            Create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = actionButton})
+            
+            Create("TextLabel", {
+                Text = name,
+                TextColor3 = Color3.fromRGB(240, 240, 240),
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, -10, 1, 0),
+                Position = UDim2.new(0, 5, 0, 0),
+                Font = Enum.Font.Gotham,
+                TextSize = 12,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = actionButton
+            })
+            
+            if actionConfig.icon then
                 Create("TextLabel", {
-                    Text = data.labels[i] or "",
-                    TextColor3 = Color3.fromRGB(240, 240, 240),
+                    Text = actionConfig.icon,
+                    TextColor3 = Color3.fromRGB(200, 200, 200),
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 15),
-                    Position = UDim2.new(0, 0, 1, 2),
+                    Size = UDim2.new(0, 20, 1, 0),
+                    Position = UDim2.new(1, -25, 0, 0),
                     Font = Enum.Font.Gotham,
-                    TextSize = 10,
-                    Parent = bar
+                    TextSize = 14,
+                    TextXAlignment = Enum.TextXAlignment.Right,
+                    Parent = actionButton
                 })
             end
+            
+            -- ホバーエフェクト
+            actionButton.MouseEnter:Connect(function()
+                TweenService:Create(actionButton, TweenInfo.new(0.15), {
+                    BackgroundTransparency = 0.2
+                }):Play()
+            end)
+            
+            actionButton.MouseLeave:Connect(function()
+                TweenService:Create(actionButton, TweenInfo.new(0.15), {
+                    BackgroundTransparency = 0.5
+                }):Play()
+            end)
+            
+            actionButton.MouseButton1Click:Connect(function()
+                actionConfig.callback()
+            end)
         end
         
-        return chartFrame
+        return gridFrame
+    end,
+    
+    -- コンパクトなデータ表示
+    CompactDataView = function(container, data)
+        local dataFrame = Create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(30, 30, 35),
+            Size = UDim2.new(1, 0, 0, 80),
+            Parent = container
+        })
+        
+        Create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = dataFrame})
+        
+        -- シンプルなバーチャート
+        local maxValue = math.max(unpack(data.values))
+        local barWidth = 1 / #data.values
+        
+        for i, value in ipairs(data.values) do
+            local barHeight = (value / maxValue) * 60
+            local bar = Create("Frame", {
+                BackgroundColor3 = data.colors[i] or Color3.fromRGB(0, 170, 255),
+                Size = UDim2.new(barWidth - 0.05, 0, 0, barHeight),
+                Position = UDim2.new((i-1) * barWidth + 0.025, 0, 1, -barHeight - 5),
+                AnchorPoint = Vector2.new(0, 1),
+                Parent = dataFrame
+            })
+            
+            Create("UICorner", {
+                CornerRadius = UDim.new(0, 2),
+                Parent = bar
+            })
+        end
+        
+        Create("TextLabel", {
+            Text = data.title or "Statistics",
+            TextColor3 = Color3.fromRGB(240, 240, 240),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -10, 0, 20),
+            Position = UDim2.new(0, 5, 0, 5),
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 12,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = dataFrame
+        })
+        
+        return dataFrame
     end
 }
 
 function Nebula:CreateWindow(config)
     local Window = {}
     
-    -- ウィンドウフレーム
+    -- 横広のウィンドウフレーム
     local MainFrame = Create("Frame", {
         Name = "MainWindow",
         BackgroundColor3 = Color3.fromRGB(20, 20, 25),
         BackgroundTransparency = 0.05,
-        Size = config.Size or UDim2.new(0, 600, 0, 500),
-        Position = config.Position or UDim2.new(0.5, -300, 0.5, -250),
+        Size = config.Size or UDim2.new(0, 700, 0, 400), -- 横広サイズ
+        Position = config.Position or UDim2.new(0.5, -350, 0.5, -200),
         ClipsDescendants = true,
         Parent = ScreenGui
     })
@@ -340,7 +421,7 @@ function Nebula:CreateWindow(config)
     local TitleBar = Create("Frame", {
         Name = "TitleBar",
         BackgroundColor3 = Color3.fromRGB(30, 30, 35),
-        Size = UDim2.new(1, 0, 0, 42),
+        Size = UDim2.new(1, 0, 0, 36),
         Parent = MainFrame
     })
     
@@ -356,9 +437,9 @@ function Nebula:CreateWindow(config)
         Size = UDim2.new(1, -100, 1, 0),
         Position = UDim2.new(0, 15, 0, 0),
         Font = Enum.Font.GothamSemibold,
-        Text = config.Name or "Nebula UI - Revolutionary",
+        Text = config.Name or "Nebula UI - Ultimate",
         TextColor3 = Color3.fromRGB(240, 240, 240),
-        TextSize = 16,
+        TextSize = 15,
         TextXAlignment = Enum.TextXAlignment.Left,
         Parent = TitleBar
     })
@@ -368,11 +449,11 @@ function Nebula:CreateWindow(config)
         Name = "Minimize",
         BackgroundColor3 = Color3.fromRGB(45, 45, 50),
         BackgroundTransparency = 0.5,
-        Size = UDim2.new(0, 32, 0, 32),
-        Position = UDim2.new(1, -74, 0.5, -16),
+        Size = UDim2.new(0, 28, 0, 28),
+        Position = UDim2.new(1, -64, 0.5, -14),
         Text = "_",
         TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 18,
+        TextSize = 16,
         Font = Enum.Font.GothamBold,
         Parent = TitleBar
     })
@@ -387,11 +468,11 @@ function Nebula:CreateWindow(config)
         Name = "Close",
         BackgroundColor3 = Color3.fromRGB(45, 45, 50),
         BackgroundTransparency = 0.5,
-        Size = UDim2.new(0, 32, 0, 32),
-        Position = UDim2.new(1, -37, 0.5, -16),
+        Size = UDim2.new(0, 28, 0, 28),
+        Position = UDim2.new(1, -32, 0.5, -14),
         Text = "×",
         TextColor3 = Color3.fromRGB(200, 200, 200),
-        TextSize = 18,
+        TextSize = 16,
         Font = Enum.Font.GothamBold,
         Parent = TitleBar
     })
@@ -401,65 +482,58 @@ function Nebula:CreateWindow(config)
         Parent = CloseButton
     })
 
-    -- コンテンツエリア
+    -- メインコンテンツエリア（横レイアウト）
     local Content = Create("Frame", {
         Name = "Content",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -20, 1, -62),
-        Position = UDim2.new(0, 10, 0, 52),
+        Size = UDim2.new(1, -20, 1, -46),
+        Position = UDim2.new(0, 10, 0, 36),
         Parent = MainFrame
     })
 
-    -- タブシステム
-    local TabButtons = Create("Frame", {
-        Name = "TabButtons",
-        BackgroundColor3 = Color3.fromRGB(25, 25, 30),
-        Size = UDim2.new(0, 140, 1, 0),
+    -- 水平タブシステム（上部タブ）
+    local TabContainer = Create("Frame", {
+        Name = "TabContainer",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 35),
         Parent = Content
-    })
-    
-    Create("UICorner", {
-        CornerRadius = UDim.new(0, 10),
-        Parent = TabButtons
     })
 
     local TabContent = Create("Frame", {
         Name = "TabContent",
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, -150, 1, 0),
-        Position = UDim2.new(0, 150, 0, 0),
+        Size = UDim2.new(1, 0, 1, -40),
+        Position = UDim2.new(0, 0, 0, 35),
         Parent = Content
     })
 
-    -- 修正されたドラッグ機能
-    local dragging = false
-    local dragStart, startPos
+    -- スクロール可能なコンテンツエリア
+    local ScrollContent = Create("ScrollingFrame", {
+        Name = "ScrollContent",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Color3.fromRGB(60, 60, 65),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        Parent = TabContent
+    })
 
-    TitleBar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainFrame.Position
-        end
-    end)
+    local ContentLayout = Create("UIListLayout", {
+        Padding = UDim.new(0, 10),
+        Parent = ScrollContent
+    })
 
-    TitleBar.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
+    Create("UIPadding", {
+        PaddingTop = UDim.new(0, 5),
+        PaddingBottom = UDim.new(0, 5),
+        PaddingLeft = UDim.new(0, 5),
+        PaddingRight = UDim.new(0, 5),
+        Parent = ScrollContent
+    })
 
-    UserInputService.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - dragStart
-            MainFrame.Position = UDim2.new(
-                startPos.X.Scale, 
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale, 
-                startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
+    -- 修正されたドラッグ機能を適用
+    DragManager:EnableDrag(MainFrame, TitleBar)
 
     -- ウィンドウコントロール
     local isMinimized = false
@@ -468,11 +542,11 @@ function Nebula:CreateWindow(config)
         isMinimized = not isMinimized
         if isMinimized then
             TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {
-                Size = UDim2.new(MainFrame.Size.X.Scale, MainFrame.Size.X.Offset, 0, 42)
+                Size = UDim2.new(MainFrame.Size.X.Scale, MainFrame.Size.X.Offset, 0, 36)
             }):Play()
         else
             TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {
-                Size = config.Size or UDim2.new(0, 600, 0, 500)
+                Size = config.Size or UDim2.new(0, 700, 0, 400)
             }):Play()
         end
     end)
@@ -493,19 +567,19 @@ function Nebula:CreateWindow(config)
     function Window:CreateTab(tabName, icon)
         local Tab = {}
         
-        -- タブボタン
+        -- 水平タブボタン
         local TabButton = Create("TextButton", {
             Name = tabName .. "Tab",
             BackgroundColor3 = Color3.fromRGB(35, 35, 40),
             BackgroundTransparency = 0.8,
-            Size = UDim2.new(1, -12, 0, 45),
-            Position = UDim2.new(0, 6, 0, (#Tabs * 50) + 6),
+            Size = UDim2.new(0, 120, 1, 0),
+            Position = UDim2.new((#Tabs * 125), 0, 0, 0),
             Text = "",
-            Parent = TabButtons
+            Parent = TabContainer
         })
         
         Create("UICorner", {
-            CornerRadius = UDim.new(0, 8),
+            CornerRadius = UDim.new(0, 6),
             Parent = TabButton
         })
 
@@ -522,7 +596,7 @@ function Nebula:CreateWindow(config)
             BackgroundTransparency = 1,
             Size = UDim2.new(0, 20, 1, 0),
             Font = Enum.Font.Gotham,
-            TextSize = 14,
+            TextSize = 12,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = buttonContent
         })
@@ -534,26 +608,18 @@ function Nebula:CreateWindow(config)
             Size = UDim2.new(1, -25, 1, 0),
             Position = UDim2.new(0, 25, 0, 0),
             Font = Enum.Font.Gotham,
-            TextSize = 13,
+            TextSize = 12,
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = buttonContent
         })
 
         -- タブコンテンツ
-        local TabFrame = Create("ScrollingFrame", {
+        local TabFrame = Create("Frame", {
             Name = tabName .. "Content",
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 1, 0),
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            ScrollBarThickness = 4,
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
             Visible = false,
-            Parent = TabContent
-        })
-
-        local Layout = Create("UIListLayout", {
-            Padding = UDim.new(0, 12),
-            Parent = TabFrame
+            Parent = ScrollContent
         })
 
         -- タブ選択
@@ -563,7 +629,7 @@ function Nebula:CreateWindow(config)
             end
             
             -- ボタンステートを更新
-            for _, btn in pairs(TabButtons:GetChildren()) do
+            for _, btn in pairs(TabContainer:GetChildren()) do
                 if btn:IsA("TextButton") then
                     TweenService:Create(btn, TweenInfo.new(0.2), {
                         BackgroundTransparency = 0.8
@@ -618,7 +684,7 @@ function Nebula:CreateWindow(config)
             })
 
             local SectionLayout = Create("UIListLayout", {
-                Padding = UDim.new(0, 10),
+                Padding = UDim.new(0, 8),
                 Parent = SectionContent
             })
 
@@ -627,7 +693,7 @@ function Nebula:CreateWindow(config)
                 Text = sectionName,
                 TextColor3 = Color3.fromRGB(240, 240, 240),
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 28),
+                Size = UDim2.new(1, 0, 0, 25),
                 Font = Enum.Font.GothamSemibold,
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
@@ -635,24 +701,20 @@ function Nebula:CreateWindow(config)
             })
 
             -- 革新的な機能をセクションに追加
-            Section.AddSmartSearch = function(self, items)
-                return InnovativeFeatures.SmartSearch(SectionContent, items)
-            end
-            
             Section.AddPerformanceMonitor = function(self)
                 return InnovativeFeatures.PerformanceMonitor(SectionContent)
             end
             
             Section.AddHotkeySystem = function(self, hotkeys)
-                return InnovativeFeatures.HotkeySystem(SectionContent, hotkeys)
+                return InnovativeFeatures.CompactHotkeySystem(SectionContent, hotkeys)
             end
             
-            Section.Add3DPreview = function(self, modelName)
-                return InnovativeFeatures.Create3DPreview(SectionContent, modelName)
+            Section.AddQuickActions = function(self, actions)
+                return InnovativeFeatures.QuickActionGrid(SectionContent, actions)
             end
             
-            Section.AddChart = function(self, data, chartType)
-                return InnovativeFeatures.CreateChart(SectionContent, data, chartType)
+            Section.AddDataView = function(self, data)
+                return InnovativeFeatures.CompactDataView(SectionContent, data)
             end
 
             -- 従来のコントロールも保持
@@ -661,7 +723,7 @@ function Nebula:CreateWindow(config)
                     Name = buttonConfig.Name .. "Button",
                     BackgroundColor3 = Color3.fromRGB(40, 40, 45),
                     BackgroundTransparency = 0.5,
-                    Size = UDim2.new(1, 0, 0, 38),
+                    Size = UDim2.new(1, 0, 0, 35),
                     Text = "",
                     Parent = SectionContent
                 })
@@ -718,24 +780,25 @@ end
 
 -- 使用例
 local Window = Nebula:CreateWindow({
-    Name = "Nebula UI - Revolutionary",
-    Size = UDim2.new(0, 650, 0, 550),
-    Position = UDim2.new(0.5, -325, 0.5, -275)
+    Name = "Nebula UI - Ultimate Edition",
+    Size = UDim2.new(0, 750, 0, 450), -- 横広サイズ
+    Position = UDim2.new(0.5, -375, 0.5, -225)
 })
 
 -- タブの作成
 local DashboardTab = Window:CreateTab("ダッシュボード", "📊")
 local ToolsTab = Window:CreateTab("ツール", "🛠️")
+local GameTab = Window:CreateTab("ゲーム", "🎮")
 local SettingsTab = Window:CreateTab("設定", "⚙️")
 
 -- ダッシュボードに革新的な機能を追加
-local DashboardSection = DashboardTab:CreateSection("パフォーマンス")
-DashboardSection:AddPerformanceMonitor()
+local PerformanceSection = DashboardTab:CreateSection("パフォーマンス")
+PerformanceSection:AddPerformanceMonitor()
 
 local StatsSection = DashboardTab:CreateSection("統計")
-StatsSection:AddChart({
-    labels = {"月", "火", "水", "木", "金", "土", "日"},
-    values = {65, 59, 80, 81, 56, 55, 40},
+StatsSection:AddDataView({
+    title = "週間アクティビティ",
+    values = {65, 59, 80, 81, 56, 55, 70},
     colors = {
         Color3.fromRGB(255, 99, 132),
         Color3.fromRGB(255, 159, 64),
@@ -745,47 +808,82 @@ StatsSection:AddChart({
         Color3.fromRGB(153, 102, 255),
         Color3.fromRGB(201, 203, 207)
     }
-}, "bar")
+})
 
 -- ツールタブ
-local QuickTools = ToolsTab:CreateSection("クイックツール")
-QuickTools:Add3DPreview("サンプルオブジェクト")
+local QuickTools = ToolsTab:CreateSection("クイックアクション")
+QuickTools:AddQuickActions({
+    ["スクリーンショット"] = {
+        icon = "📸",
+        callback = function()
+            print("スクリーンショットを撮影")
+        end
+    },
+    ["位置を記録"] = {
+        icon = "📍", 
+        callback = function()
+            print("現在位置を記録")
+        end
+    },
+    ["テレポート"] = {
+        icon = "⚡",
+        callback = function()
+            print("テレポート実行")
+        end
+    },
+    ["設定を保存"] = {
+        icon = "💾",
+        callback = function()
+            print("設定を保存")
+        end
+    }
+})
 
 local HotkeySection = ToolsTab:CreateSection("ホットキー")
 HotkeySection:AddHotkeySystem({
-    ["UIを表示/非表示"] = {
+    ["UI表示切替"] = {
         key = "RightShift",
         callback = function()
-            print("UIトグル")
+            print("UI表示を切り替え")
         end
     },
-    ["スクリーンショット"] = {
-        key = "F12", 
+    ["クイックメニュー"] = {
+        key = "F1", 
         callback = function()
-            print("スクリーンショット撮影")
-        end
-    },
-    ["クイックセーブ"] = {
-        key = "F5",
-        callback = function()
-            print("クイックセーブ実行")
+            print("クイックメニューを表示")
         end
     }
+})
+
+-- ゲームタブ
+local GameTools = GameTab:CreateSection("ゲームツール")
+GameTools:CreateButton({
+    Name = "サーバー情報を表示",
+    Callback = function()
+        print("サーバー情報を表示")
+    end
+})
+
+GameTools:CreateButton({
+    Name = "プレイヤーリスト",
+    Callback = function()
+        print("プレイヤーリストを表示")
+    end
 })
 
 -- 設定タブ
 local ConfigSection = SettingsTab:CreateSection("設定")
 ConfigSection:CreateButton({
-    Name = "テーマを変更",
+    Name = "テーマ設定",
     Callback = function()
-        print("テーマ変更ダイアログを表示")
+        print("テーマ設定を開く")
     end
 })
 
 ConfigSection:CreateButton({
-    Name = "設定をエクスポート", 
+    Name = "キー設定", 
     Callback = function()
-        print("設定をエクスポート")
+        print("キー設定を開く")
     end
 })
 
